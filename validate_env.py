@@ -36,7 +36,6 @@ class EnvValidator:
         'SECRET_KEY': 'Django secret key for cryptographic signing',
         'JWT_SECRET_KEY': 'JWT token signing key',
         'DATABASE_URL': 'PostgreSQL database connection URL',
-        'REDIS_URL': 'Redis connection URL for Celery',
         'EMAIL_HOST_USER': 'Email address for sending notifications',
         'EMAIL_HOST_PASSWORD': 'Email password or app password',
         'OPENROUTER_API_KEY': 'OpenRouter API key for AI features',
@@ -44,6 +43,7 @@ class EnvValidator:
     
     # Optional but recommended variables
     OPTIONAL_VARS = {
+        'REDIS_URL': 'Redis connection URL for Celery (required for background tasks)',
         'ALLOWED_HOSTS': 'Comma-separated list of allowed hostnames',
         'CORS_ALLOWED_ORIGINS': 'Comma-separated list of allowed CORS origins',
         'FIREBASE_CREDENTIALS': 'Firebase service account JSON (single-line string)',
