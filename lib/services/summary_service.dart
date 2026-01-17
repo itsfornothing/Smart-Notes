@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/note.dart';
 import '../models/summary_cache.dart';
 
@@ -64,6 +65,12 @@ class SummaryService {
   /// Creates and initializes a SummaryService instance
   static Future<SummaryService> create() async {
     final functions = FirebaseFunctions.instance;
+    
+    // Use emulator for development
+    if (kDebugMode) {
+      functions.useFunctionsEmulator('localhost', 5001);
+    }
+    
     final cache = await SummaryCache.create();
     final connectivity = Connectivity();
     final auth = FirebaseAuth.instance;
@@ -157,7 +164,7 @@ class SummaryService {
     final attemptCount = _retryAttempts[requestKey] ?? 0;
 
     try {
-      final callable = _functions.httpsCallable('summarizeNote');
+      final callable = _functions.httpsCallable('summarizeNoteFunction');
       
       final result = await callable.call({
         'noteId': note.id,
@@ -271,27 +278,86 @@ class SummaryService {
 
     if (error is FirebaseFunctionsException) {
       String message;
+      String code = error.code;
+      
       switch (error.code) {
         case 'unauthenticated':
-          message = 'Authentication required';
+          message = 'Authentication required. Please sign in again.';
           break;
         case 'permission-denied':
-          message = 'Permission denied';
+          message = 'Permission denied. You can only summarize your own notes.';
           break;
         case 'resource-exhausted':
-          message = 'Usage quota exceeded. Please try again later.';
+          // Enhanced quota and rate limit messages
+          final errorMessage = error.message ?? '';
+          if (errorMessage.contains('Rate limit exceeded')) {
+            if (errorMessage.contains('per minute')) {
+              message = 'Too many requests. Please wait a minute before trying again.';
+            } else if (errorMessage.contains('per hour')) {
+              message = 'Hourly rate limit reached. Please try again in an hour.';
+            } else {
+              message = 'Rate limit exceeded. Please try again later.';
+            }
+          } else if (errorMessage.contains('Daily quota exceeded')) {
+            message = 'Daily summary limit reached. Quota resets at midnight.';
+          } else if (errorMessage.contains('Monthly quota exceeded')) {
+            message = 'Monthly summary limit reached. Quota resets monthly.';
+          } else {
+            message = 'Usage quota exceeded. Please try again later.';
+          }
           break;
         case 'invalid-argument':
-          message = 'Invalid request. Please try again.';
+          final errorMessage = error.message ?? '';
+          if (errorMessage.contains('exceeds maximum length')) {
+            message = 'Note is too long for summarization (max 10,000 characters).';
+          } else if (errorMessage.contains('must be at least')) {
+            message = 'Note is too short for summarization (minimum 100 characters).';
+          } else {
+            message = 'Invalid request. Please check your note content.';
+          }
+          break;
+        case 'not-found':
+          message = 'Note not found. It may have been deleted.';
+          break;
+        case 'deadline-exceeded':
+          message = 'Request timed out. The AI service is taking longer than usual.';
+          break;
+        case 'unavailable':
+          message = 'AI service is temporarily unavailable. Please try again later.';
+          break;
+        case 'internal':
+          final errorMessage = error.message ?? '';
+          if (errorMessage.contains('configuration error')) {
+            message = 'Service configuration issue. Please contact support.';
+          } else {
+            message = 'Internal service error. Please try again later.';
+          }
           break;
         default:
-          message = error.message ?? 'Service temporarily unavailable';
+          message = error.message ?? 'Service temporarily unavailable. Please try again.';
       }
       
       return SummaryException(
         message,
-        code: error.code,
+        code: code,
         originalError: error,
+      );
+    }
+
+    // Handle HTTP exceptions
+    if (error is HttpException) {
+      return SummaryException(
+        'Network error: ${error.message}',
+        code: 'HTTP_ERROR',
+        originalError: error,
+      );
+    }
+
+    // Handle format exceptions (JSON parsing errors)
+    if (error is FormatException) {
+      return const SummaryException(
+        'Invalid response from server. Please try again.',
+        code: 'INVALID_RESPONSE',
       );
     }
 

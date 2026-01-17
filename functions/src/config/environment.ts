@@ -1,22 +1,12 @@
-import * as functions from 'firebase-functions';
-
 /**
  * Environment configuration for Firebase Functions
- * Handles both local development (.env) and production (Firebase config) environments
+ * Uses environment variables for configuration (modern approach)
  */
 export class Environment {
   /**
    * Get OpenRouter API key from environment
-   * Priority: Firebase config > Environment variable
    */
   static getOpenRouterApiKey(): string {
-    // Try Firebase config first (production)
-    const firebaseConfig = functions.config().openrouter?.api_key;
-    if (firebaseConfig) {
-      return firebaseConfig;
-    }
-
-    // Fall back to environment variable (local development)
     const envKey = process.env.OPENROUTER_API_KEY;
     if (envKey) {
       return envKey;
@@ -24,7 +14,7 @@ export class Environment {
 
     throw new Error(
       'OpenRouter API key not configured. ' +
-      'Set OPENROUTER_API_KEY environment variable or configure Firebase functions config.'
+      'Set OPENROUTER_API_KEY environment variable.'
     );
   }
 
@@ -61,5 +51,37 @@ export class Environment {
    */
   static getMinContentLength(): number {
     return 100; // 100 characters as per requirements
+  }
+
+  /**
+   * Get rate limit configuration
+   */
+  static getRateLimitConfig() {
+    return {
+      maxRequestsPerHour: 50, // Per user rate limit
+      maxRequestsPerMinute: 5, // Burst protection
+    };
+  }
+
+  /**
+   * Get retry configuration
+   */
+  static getRetryConfig() {
+    return {
+      maxRetries: 3,
+      initialDelayMs: 1000,
+      maxDelayMs: 10000,
+      backoffMultiplier: 2,
+    };
+  }
+
+  /**
+   * Get quota limits
+   */
+  static getQuotaLimits() {
+    return {
+      dailyRequestsPerUser: 100,
+      monthlyRequestsPerUser: 1000,
+    };
   }
 }

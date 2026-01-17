@@ -47,25 +47,25 @@ class DefaultFirebaseOptions {
     apiKey: 'your-web-api-key',
     appId: 'your-web-app-id',
     messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    authDomain: 'your-project-id.firebaseapp.com',
-    storageBucket: 'your-project-id.appspot.com',
+    projectId: 'smartnotes-c32b2',
+    authDomain: 'smartnotes-c32b2.firebaseapp.com',
+    storageBucket: 'smartnotes-c32b2.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'your-android-api-key',
     appId: 'your-android-app-id',
     messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    projectId: 'smartnotes-c32b2',
+    storageBucket: 'smartnotes-c32b2.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'your-ios-api-key',
     appId: 'your-ios-app-id',
     messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    projectId: 'smartnotes-c32b2',
+    storageBucket: 'smartnotes-c32b2.appspot.com',
     iosBundleId: 'com.example.smartNotes',
   );
 
@@ -73,8 +73,8 @@ class DefaultFirebaseOptions {
     apiKey: 'your-macos-api-key',
     appId: 'your-macos-app-id',
     messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    projectId: 'smartnotes-c32b2',
+    storageBucket: 'smartnotes-c32b2.appspot.com',
     iosBundleId: 'com.example.smartNotes',
   );
 }
