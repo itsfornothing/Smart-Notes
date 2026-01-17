@@ -7,6 +7,8 @@ A modern note-taking application built with Flutter and Firebase. Create, edit, 
 - **User Authentication**: Sign in with email/password or Google account
 - **Real-time Sync**: Notes are automatically synchronized across devices using Firebase Firestore
 - **Rich Text Editing**: Create and edit notes with a clean, intuitive interface
+- **AI-Powered Summarization**: Generate intelligent summaries of your notes using advanced AI
+- **Smart Caching**: Offline support with intelligent caching for better performance
 - **Secure Storage**: All data is securely stored in Firebase with user authentication
 - **Cross-platform**: Works on Android, iOS, and web platforms
 
@@ -15,8 +17,10 @@ A modern note-taking application built with Flutter and Firebase. Create, edit, 
 - **Flutter**: Cross-platform mobile development framework
 - **Firebase Authentication**: Secure user authentication
 - **Cloud Firestore**: Real-time NoSQL database
+- **Firebase Functions**: Serverless backend for AI processing
 - **Firebase Storage**: File and image storage
 - **Google Sign-In**: OAuth authentication with Google
+- **OpenAI Integration**: Advanced AI for note summarization
 
 ## Getting Started
 
@@ -59,12 +63,28 @@ A modern note-taking application built with Flutter and Firebase. Create, edit, 
 # Run on connected device/emulator
 flutter run
 
+# Run tests
+flutter test
+
 # Build for Android
 flutter build apk
 
 # Build for iOS
 flutter build ios
 ```
+
+## Development Mode
+
+The app includes AI summarization features that work in development using Firebase emulators:
+
+1. **Start Firebase Functions Emulator**:
+   ```bash
+   cd functions
+   npm install
+   firebase emulators:start --only functions
+   ```
+
+2. **Run the app** - it will automatically connect to local emulators for AI features
 
 ## Firebase Setup
 
