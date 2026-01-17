@@ -98,3 +98,10 @@ coverage/lcov.info
 
 # OS
 Thumbs.db
+
+# Development and spec files
+.kiro/
+*.md
+!README.md
+TASK_*
+FIREBASE_FUNCTIONS_SETUP.md
