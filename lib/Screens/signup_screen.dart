@@ -3,53 +3,61 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/auth_service.dart';
-import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
+import 'login_screen.dart';
 import 'tabs_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _storage = const FlutterSecureStorage();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
   bool _isLoading = false;
   bool _isObscure = true;
+  bool _isObscureConfirm = true;
 
-  // Email/Password Login
-  Future<void> _loginWithEmail() async {
+  Future<void> _signUpWithEmail() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final user = await _authService.loginWithEmail(
+      final user = await _authService.signUpWithEmail(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (user != null) {
-        print('Email login successful: ${user.email}');
+        print('Email signup successful: ${user.email}');
         // Don't navigate manually - let AuthWrapper handle it
       }
     } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
-      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
-        message = 'Invalid email or password';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Invalid credentials';
-      } else if (e.code == 'too-many-requests') {
-        message = 'Too many attempts. Try again later.';
+      String message = 'Sign up failed';
+      if (e.code == 'weak-password') {
+        message = 'The password is too weak';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'An account already exists for that email';
       } else if (e.code == 'invalid-email') {
-        message = 'Invalid email format';
+        message = 'Invalid email address';
       }
 
       if (mounted) {
@@ -61,11 +69,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      print('Login error: $e');
+      print('Signup error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: ${e.toString()}'),
+            content: Text('Sign up failed: ${e.toString()}'),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -75,48 +83,25 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Google Sign-In
-  Future<void> _signInWithGoogle() async {
+  Future<void> _signUpWithGoogle() async {
     setState(() => _isLoading = true);
 
     try {
-      print('Starting Google Sign-In...');
-      
       final user = await _authService.signInWithGoogle();
       if (user == null) {
-        print('Google Sign-In cancelled by user');
         setState(() => _isLoading = false);
-        return; // User canceled
+        return; // User cancelled
       }
 
-      print('Google Sign-In successful: ${user.email}');
+      print('Google signup successful: ${user.email}');
       // Don't navigate manually - let AuthWrapper handle it
-    } on FirebaseAuthException catch (e) {
-      print('Firebase Auth error: ${e.code} - ${e.message}');
-      String message = 'Google sign-in failed';
-      if (e.code == 'account-exists-with-different-credential') {
-        message = 'Account already exists with different method';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Invalid Google credentials';
-      } else if (e.code == 'operation-not-allowed') {
-        message = 'Google sign-in is not enabled';
-      }
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     } catch (e) {
-      print('Google Sign-In error: $e');
+      print('Google signup error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Google sign-in failed: ${e.toString()}'),
+            content: Text('Google sign up failed: ${e.toString()}'),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -128,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -143,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
 
               // App Logo and Title
               Column(
@@ -163,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Welcome back! Please sign in to continue.',
+                    'Create your account to get started.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
@@ -172,9 +158,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
 
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
 
-              // Email/Password Form
+              // Sign Up Form
               Form(
                 key: _formKey,
                 child: Column(
@@ -207,18 +193,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _isObscure,
-                      autofillHints: const [AutofillHints.password],
+                      autofillHints: const [AutofillHints.newPassword],
                       decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isObscure
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                            _isObscure ? Icons.visibility : Icons.visibility_off,
                           ),
-                          onPressed: () =>
-                              setState(() => _isObscure = !_isObscure),
+                          onPressed: () => setState(() => _isObscure = !_isObscure),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -227,19 +210,53 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _isObscureConfirm,
+                      autofillHints: const [AutofillHints.newPassword],
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isObscureConfirm
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () => setState(
+                            () => _isObscureConfirm = !_isObscureConfirm,
+                          ),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        filled: true,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 24),
 
-                    // Login Button
+                    // Sign Up Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _loginWithEmail,
+                        onPressed: _isLoading ? null : _signUpWithEmail,
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -248,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
-                                'Sign In',
+                                'Sign Up',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -257,27 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Forgot Password
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ForgotPasswordScreen(),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
               ),
 
@@ -303,12 +299,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 32),
 
-              // Google Sign In Button
+              // Google Sign Up Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  onPressed: _isLoading ? null : _signUpWithGoogle,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black87,
@@ -339,12 +335,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 48),
 
-              // Sign Up Link
+              // Sign In Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Don't have an account? ",
+                    'Already have an account? ',
                     style: TextStyle(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
@@ -354,12 +350,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const SignUpScreen(),
+                          builder: (_) => const LoginScreen(),
                         ),
                       );
                     },
                     child: Text(
-                      'Sign Up',
+                      'Sign In',
                       style: TextStyle(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,

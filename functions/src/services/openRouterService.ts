@@ -39,8 +39,8 @@ interface OpenRouterErrorResponse {
 export class OpenRouterService {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  private readonly primaryModel = 'openai/gpt-3.5-turbo';
-  private readonly fallbackModel = 'anthropic/claude-3-haiku';
+  private readonly primaryModel = 'openai/gpt-4o-mini';
+  private readonly fallbackModel = 'google/gemma-2-9b-it:free';
   private readonly timeout: number;
   private readonly retryConfig: any;
 
